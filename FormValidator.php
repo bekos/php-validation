@@ -3,7 +3,8 @@
 /**
  * Form validation library.
  *
- * @see http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/
+ * @author Tasos Bekos <tbekos@gmail.com>
+ * @see Based on idea: http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/
  */
 class FormValidator {
 
@@ -17,7 +18,7 @@ class FormValidator {
 
     /**
      * Constructor.
-     * Define which values to validate.
+     * Define values to validate.
      *
      * @param array $data
      */
@@ -28,14 +29,14 @@ class FormValidator {
     // ----------------- ADD NEW RULE FUNCTIONS BELOW THIS LINE ----------------
 
     /**
-     * Field has to be valid email address.
+     * Field, if completed, has to be a valid email address.
      *
      * @param string $message
      * @return FormValidator
      */
     public function email($message = null) {
         $this->set_rule(__FUNCTION__, function($email) {
-                    return (strlen(trim($email)) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) === TRUE) ? TRUE : FALSE;
+                    return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) === TRUE) ? TRUE : FALSE;
                 }, $message);
         return $this;
     }
@@ -54,7 +55,7 @@ class FormValidator {
     }
 
     /**
-     * Field must contain valid float value.
+     * Field must contain a valid float value.
      *
      * @param string $message
      * @return FormValidator
@@ -67,7 +68,7 @@ class FormValidator {
     }
 
     /**
-     * Field must contain valid integer value.
+     * Field must contain a valid integer value.
      *
      * @param string $message
      * @return FormValidator
@@ -80,7 +81,7 @@ class FormValidator {
     }
 
     /**
-     * Every character is a digit.
+     * Every character in field, if completed, must be a digit.
      * This is just like integer(), except there is no upper limit.
      *
      * @param string $message
@@ -88,50 +89,54 @@ class FormValidator {
      */
     public function digits($message = null) {
         $this->set_rule(__FUNCTION__, function($value) {
-                    return (ctype_digit((string) $value));
+                    return (strlen($value) === 0 || ctype_digit((string) $value));
                 }, $message);
         return $this;
     }
 
     /**
-     * Field must be a number greater than or equal to X.
+     * Field must be a number greater than [or equal to] X.
      *
-     * @param numeric $value
+     * @param numeric $limit
      * @param bool $include Whether to include limit value.
      * @param string $message
      * @return FormValidator
      */
-    public function min($value, $include = TRUE, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
-                    $value = $args[0];
-
-                    if ($args[1] == TRUE) { // Include limit or not
-                        return ((float) $value > (float) $string) ? FALSE : TRUE;
-                    } else {
-                        return ((float) $value >= (float) $string) ? FALSE : TRUE;
+    public function min($limit, $include = TRUE, $message = null) {
+        $this->set_rule(__FUNCTION__, function($value, $args) {
+                    if (strlen($value) === 0) {
+                        return TRUE;
                     }
-                }, $message, array($value, $include));
+
+                    $value = (float) $value;
+                    $limit = (float) $args[0];
+                    $inc = (bool) $args[1];
+
+                    return ($value > $limit || ($inc === TRUE && $value === $limit));
+                }, $message, array($limit, $include));
         return $this;
     }
 
     /**
-     * Field must be a number greater than or equal to X.
+     * Field must be a number greater than [or equal to] X.
      *
-     * @param numeric $value
+     * @param numeric $limit
      * @param bool $include Whether to include limit value.
      * @param string $message
      * @return FormValidator
      */
-    public function max($value, $include = TRUE, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
-                    $value = $args[0];
-
-                    if ($args[1] == TRUE) { // Include limit or not
-                        return ((float) $value < (float) $string) ? FALSE : TRUE;
-                    } else {
-                        return ((float) $value <= (float) $string) ? FALSE : TRUE;
+    public function max($limit, $include = TRUE, $message = null) {
+        $this->set_rule(__FUNCTION__, function($value, $args) {
+                    if (strlen($value) === 0) {
+                        return TRUE;
                     }
-                }, $message, array($value, $include));
+
+                    $value = (float) $value;
+                    $limit = (float) $args[0];
+                    $inc = (bool) $args[1];
+
+                    return ($value < $limit || ($inc === TRUE && $value === $limit));
+                }, $message, array($limit, $include));
         return $this;
     }
 
@@ -145,7 +150,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function between($min, $max, $include = TRUE, $message = null) {
-        $message = self::getDefaultMessage(__FUNCTION__, array($min, $max));
+        $message = self::getDefaultMessage(__FUNCTION__, array($min, $max, $include));
 
         $this->min($min, $include, $message)->max($max, $include, $message);
         return $this;
@@ -194,7 +199,7 @@ class FormValidator {
     }
 
     /**
-     * Field is the same as another one (ex. for password comparison).
+     * Field is the same as another one (password comparison etc).
      *
      * @param string $field
      * @param string $label
@@ -395,10 +400,9 @@ class FormValidator {
     }
 
     /**
-     * Field has to be a date later than or equal to X.
+     * Field has to be one of the allowed ones.
      *
-     * @param string|integer $date Limit date.
-     * @param string $format Date format.
+     * @param string|array $allowed Allowed values.
      * @param string $message
      * @return FormValidator
      */
@@ -529,6 +533,7 @@ class FormValidator {
      * @param string $rule
      * @param closure $function
      * @param string $message
+     * @param array $args
      */
     private function set_rule($rule, $function, $message = '', $args = array()) {
         if (!array_key_exists($rule, $this->rules)) {
@@ -549,6 +554,7 @@ class FormValidator {
      * Get default error message.
      *
      * @param string $key
+     * @param array $args
      * @return string
      */
     private static function getDefaultMessage($rule, $args = null) {
@@ -599,6 +605,9 @@ class FormValidator {
 
             case 'between':
                 $message = '%s must be between ' . $args[0] . ' and ' . $args[1] . '.';
+                if ($args[2] == FALSE) {
+                    $message .= '(Without limits)';
+                }
                 break;
 
             case 'minlength':
@@ -651,5 +660,3 @@ class FormValidator {
 
 }
 ?>
-
-
