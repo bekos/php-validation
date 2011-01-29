@@ -229,6 +229,66 @@ class FormValidator {
     }
 
     /**
+     * Field must start with a specific substring.
+     *
+     * @param string $sub
+     * @param string $message
+     * @return FormValidator
+     */
+    public function startsWith($sub, $message = null) {
+        $this->set_rule(__FUNCTION__, function($string, $args) {
+                    $sub = $args[0];
+                    return (strlen($string) === 0 || substr($string, 0, strlen($sub)) === $sub);
+                }, $message, array($sub));
+        return $this;
+    }
+
+    /**
+     * Field must NOT start with a specific substring.
+     *
+     * @param string $sub
+     * @param string $message
+     * @return FormValidator
+     */
+    public function notstartsWith($sub, $message = null) {
+        $this->set_rule(__FUNCTION__, function($string, $args) {
+                    $sub = $args[0];
+                    return (strlen($string) === 0 || substr($string, 0, strlen($sub)) !== $sub);
+                }, $message, array($sub));
+        return $this;
+    }
+
+    /**
+     * Field must end with a specific substring.
+     *
+     * @param string $sub
+     * @param string $message
+     * @return FormValidator
+     */
+    public function endsWith($sub, $message = null) {
+        $this->set_rule(__FUNCTION__, function($string, $args) {
+                    $sub = $args[0];
+                    return (strlen($string) === 0 || substr($string, -strlen($sub)) === $sub);
+                }, $message, array($sub));
+        return $this;
+    }
+
+    /**
+     * Field must not end with a specific substring.
+     *
+     * @param string $sub
+     * @param string $message
+     * @return FormValidator
+     */
+    public function notendsWith($sub, $message = null) {
+        $this->set_rule(__FUNCTION__, function($string, $args) {
+                    $sub = $args[0];
+                    return (strlen($string) === 0 || substr($string, -strlen($sub)) !== $sub);
+                }, $message, array($sub));
+        return $this;
+    }
+
+    /**
      * Field has to be valid IP address.
      *
      * @param string $message
@@ -454,13 +514,16 @@ class FormValidator {
         // set up field name for error message
         $this->fields[$key] = (empty($label)) ? 'Field with the name of "' . $key . '"' : $label;
 
+        // Keep value for use in each rule
+        $string = $this->getval($key);
+
         // try each rule function
         foreach ($this->rules as $rule => $is_true) {
             if ($is_true) {
                 $function = $this->functions[$rule];
                 $args = $this->arguments[$rule]; // Arguments of rule
 
-                $valid = (empty($args)) ? $function($this->getval($key)) : $function($this->getval($key), $args);
+                $valid = (empty($args)) ? $function($string) : $function($string, $args);
                 if ($valid === FALSE) {
                     $this->register_error($rule, $key);
 
@@ -472,7 +535,7 @@ class FormValidator {
 
         // reset rules
         $this->rules = array();
-        return TRUE;
+        return $string;
     }
 
     /**
@@ -630,16 +693,32 @@ class FormValidator {
                 $message = '%s must not match ' . $args[1] . '.';
                 break;
 
+            case 'startsWith':
+                $message = '%s must start with "' . $args[0] . '".';
+                break;
+
+            case 'notstartsWith':
+                $message = '%s must not start with "' . $args[0] . '".';
+                break;
+
+            case 'endsWith':
+                $message = '%s must end with "' . $args[0] . '".';
+                break;
+
+            case 'notendsWith':
+                $message = '%s must not end with "' . $args[0] . '".';
+                break;
+
             case 'date':
-                $message = '%s δεν είναι έγκυρη';
+                $message = '%s is not valid date.';
                 break;
 
             case 'mindate':
-                $message = '%s pprepei na einai megaluteri apo ' . $args[0]->format($args[1]) . '.';
+                $message = '%s must be later than ' . $args[0]->format($args[1]) . '.';
                 break;
 
             case 'maxdate':
-                $message = '%s pprepei na einai mikroteri apo ' . $args[0]->format($args[1]) . '.';
+                $message = '%s must be before ' . $args[0]->format($args[1]) . '.';
                 break;
 
             case 'oneof':
@@ -660,3 +739,5 @@ class FormValidator {
 
 }
 ?>
+
+
