@@ -6,15 +6,16 @@
  * @author Tasos Bekos <tbekos@gmail.com>
  * @see Based on idea: http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/
  */
-class FormValidator {
+class Validator {
 
-    private $messages = array();
-    private $errors = array();
-    private $rules = array();
-    private $fields = array();
-    private $functions = array();
-    private $arguments = array();
-    private $data = null;
+    protected $messages = array();
+    protected $errors = array();
+    protected $rules = array();
+    protected $fields = array();
+    protected $functions = array();
+    protected $arguments = array();
+    protected $filters = array();
+    protected $data = null;
 
     /**
      * Constructor.
@@ -23,9 +24,21 @@ class FormValidator {
      * @param array $data
      */
     function __construct($data = null) {
-        $this->data = (is_null($data)) ? $_POST : $data;
+        if (!empty($data)) $this->setData($data);
     }
 
+    /**
+     * set the data to be validated
+     *
+     * @access public
+     * @param mixed $data
+     * @return FormValidator
+     */
+    public function setData($data) {
+        $this->data = $data;
+        return $this;
+    }
+    
     // ----------------- ADD NEW RULE FUNCTIONS BELOW THIS LINE ----------------
 
     /**
@@ -35,9 +48,8 @@ class FormValidator {
      * @return FormValidator
      */
     public function email($message = null) {
-        $this->set_rule(__FUNCTION__, function($email) {
-                    return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) === TRUE) ? TRUE : FALSE;
-                }, $message);
+        $this->setRule(__FUNCTION__, function($email) {
+                    return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) !== FALSE);                }, $message);
         return $this;
     }
 
@@ -48,8 +60,8 @@ class FormValidator {
      * @return FormValidator
      */
     public function required($message = null) {
-        $this->set_rule(__FUNCTION__, function($string) {
-                    return (strlen(trim($string)) === 0) ? FALSE : TRUE;
+        $this->setRule(__FUNCTION__, function($string) {
+                    return !(strlen(trim($string)) === 0);
                 }, $message);
         return $this;
     }
@@ -61,8 +73,8 @@ class FormValidator {
      * @return FormValidator
      */
     public function float($message = null) {
-        $this->set_rule(__FUNCTION__, function($string) {
-                    return (filter_var($string, FILTER_VALIDATE_FLOAT) === FALSE) ? FALSE : TRUE;
+        $this->setRule(__FUNCTION__, function($string) {
+                    return !(filter_var($string, FILTER_VALIDATE_FLOAT) === FALSE);
                 }, $message);
         return $this;
     }
@@ -74,8 +86,8 @@ class FormValidator {
      * @return FormValidator
      */
     public function integer($message = null) {
-        $this->set_rule(__FUNCTION__, function($string) {
-                    return (filter_var($string, FILTER_VALIDATE_INT) === FALSE) ? FALSE : TRUE;
+        $this->setRule(__FUNCTION__, function($string) {
+                    return !(filter_var($string, FILTER_VALIDATE_INT) === FALSE);
                 }, $message);
         return $this;
     }
@@ -88,7 +100,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function digits($message = null) {
-        $this->set_rule(__FUNCTION__, function($value) {
+        $this->setRule(__FUNCTION__, function($value) {
                     return (strlen($value) === 0 || ctype_digit((string) $value));
                 }, $message);
         return $this;
@@ -103,7 +115,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function min($limit, $include = TRUE, $message = null) {
-        $this->set_rule(__FUNCTION__, function($value, $args) {
+        $this->setRule(__FUNCTION__, function($value, $args) {
                     if (strlen($value) === 0) {
                         return TRUE;
                     }
@@ -126,7 +138,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function max($limit, $include = TRUE, $message = null) {
-        $this->set_rule(__FUNCTION__, function($value, $args) {
+        $this->setRule(__FUNCTION__, function($value, $args) {
                     if (strlen($value) === 0) {
                         return TRUE;
                     }
@@ -164,7 +176,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function minlength($len, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     return (strlen(trim($string)) < $args[0]) ? FALSE : TRUE;
                 }, $message, array($len));
         return $this;
@@ -178,7 +190,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function maxlength($len, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     return (strlen(trim($string)) > $args[0]) ? FALSE : TRUE;
                 }, $message, array($len));
         return $this;
@@ -192,7 +204,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function length($len, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     return (strlen(trim($string)) == $args[0]) ? TRUE : FALSE;
                 }, $message, array($len));
         return $this;
@@ -207,9 +219,9 @@ class FormValidator {
      * @return FormValidator
      */
     public function matches($field, $label, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     return ((string) $args[0] == (string) $string) ? TRUE : FALSE;
-                }, $message, array($this->getval($field), $label));
+                }, $message, array($this->_getVal($field), $label));
         return $this;
     }
 
@@ -222,9 +234,9 @@ class FormValidator {
      * @return FormValidator
      */
     public function notmatches($field, $label, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     return ((string) $args[0] == (string) $string) ? FALSE : TRUE;
-                }, $message, array($this->getval($field), $label));
+                }, $message, array($this->_getVal($field), $label));
         return $this;
     }
 
@@ -236,7 +248,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function startsWith($sub, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     $sub = $args[0];
                     return (strlen($string) === 0 || substr($string, 0, strlen($sub)) === $sub);
                 }, $message, array($sub));
@@ -251,7 +263,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function notstartsWith($sub, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     $sub = $args[0];
                     return (strlen($string) === 0 || substr($string, 0, strlen($sub)) !== $sub);
                 }, $message, array($sub));
@@ -266,7 +278,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function endsWith($sub, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     $sub = $args[0];
                     return (strlen($string) === 0 || substr($string, -strlen($sub)) === $sub);
                 }, $message, array($sub));
@@ -281,7 +293,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function notendsWith($sub, $message = null) {
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     $sub = $args[0];
                     return (strlen($string) === 0 || substr($string, -strlen($sub)) !== $sub);
                 }, $message, array($sub));
@@ -295,7 +307,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function ip($message = null) {
-        $this->set_rule(__FUNCTION__, function($string) {
+        $this->setRule(__FUNCTION__, function($string) {
                     return (strlen(trim($string)) === 0 || filter_var($string, FILTER_VALIDATE_IP)) ? TRUE : FALSE;
                 }, $message);
         return $this;
@@ -308,7 +320,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function url($message = null) {
-        $this->set_rule(__FUNCTION__, function($string) {
+        $this->setRule(__FUNCTION__, function($string) {
                     return (strlen(trim($string)) === 0 || filter_var($string, FILTER_VALIDATE_URL)) ? TRUE : FALSE;
                 }, $message);
         return $this;
@@ -319,7 +331,7 @@ class FormValidator {
      *
      * @return string
      */
-    private static function getDefaultDateFormat() {
+    protected static function getDefaultDateFormat() {
         return 'd/m/Y';
     }
 
@@ -334,7 +346,7 @@ class FormValidator {
             $format = self::getDefaultDateFormat();
         }
 
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     if (strlen(trim($string)) === 0) {
                         return TRUE;
                     }
@@ -382,13 +394,13 @@ class FormValidator {
         if (is_numeric($date)) {
             $date = new DateTime($date . ' days'); // Days difference from today
         } else {
-            $fieldValue = $this->getval($date);
+            $fieldValue = $this->_getVal($date);
             $date = ($fieldValue == FALSE) ? $date : $fieldValue;
 
             $date = DateTime::createFromFormat($format, $date);
         }
 
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     $format = $args[1];
                     $limitDate = $args[0];
 
@@ -412,13 +424,13 @@ class FormValidator {
         if (is_numeric($date)) {
             $date = new DateTime($date . ' days'); // Days difference from today
         } else {
-            $fieldValue = $this->getval($date);
+            $fieldValue = $this->_getVal($date);
             $date = ($fieldValue == FALSE) ? $date : $fieldValue;
 
             $date = DateTime::createFromFormat($format, $date);
         }
 
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     $format = $args[1];
                     $limitDate = $args[0];
 
@@ -435,7 +447,7 @@ class FormValidator {
      * @return FormValidator
      */
     public function ccnum($message = null) {
-        $this->set_rule(__FUNCTION__, function($value) {
+        $this->setRule(__FUNCTION__, function($value) {
                     $value = str_replace(' ', '', $value);
                     $length = strlen($value);
 
@@ -471,7 +483,7 @@ class FormValidator {
             $allowed = explode(',', $allowed);
         }
 
-        $this->set_rule(__FUNCTION__, function($string, $args) {
+        $this->setRule(__FUNCTION__, function($string, $args) {
                     return in_array($string, $args[0]);
                 }, $message, array($allowed));
         return $this;
@@ -489,19 +501,65 @@ class FormValidator {
     public function callback($name, $function, $message='') {
         if (is_callable($function)) {
             // set rule and function
-            $this->set_rule($name, $function, $message);
+            $this->setRule($name, $function, $message);
         } elseif (is_string($function) && preg_match($function, 'callback') !== FALSE) {
             // we can parse this as a regexp. set rule function accordingly.
-            $this->set_rule($name, function($value) use ($function) {
+            $this->setRule($name, function($value) use ($function) {
                         return ( preg_match($function, $value) ) ? TRUE : FALSE;
                     }, $message);
         } else {
             // just set a rule function to check equality.
-            $this->set_rule($name, function($value) use ( $function) {
+            $this->setRule($name, function($value) use ( $function) {
                         return ( (string) $value === (string) $function ) ? TRUE : FALSE;
                     }, $message);
         }
         return $this;
+    }
+
+    // ------------------ PRE VALIDATION FILTERING -------------------
+    /**
+     * add a filter callback for the data
+     *
+     * @param mixed $callback
+     * @return FormValidator
+     */
+    public function filter($callback, $global = false) {
+        if(is_callable($callback)) {
+            $this->filters[] = $callback;
+        }
+
+        return $this;
+    }
+
+    /**
+     * applies filters based on a data key
+     *
+     * @access protected
+     * @param string $key
+     * @return void
+     */ 
+    protected function _applyFilters($key) {
+        $this->_applyFilter($this->data[$key]);
+    }
+
+    /**
+     * recursively apply filters to a value
+     *
+     * @access protected
+     * @param mixed $val reference
+     * @return void
+     */
+    protected function _applyFilter(&$val)
+    {
+        if (is_array($val)) {
+            foreach($val as $key => &$item) {
+                $this->_applyFilter($item);
+            }
+        } else {
+            foreach($this->filters as $filter) {
+                $val = $filter($val);
+            }            
+        }
     }
 
     /**
@@ -514,28 +572,61 @@ class FormValidator {
         // set up field name for error message
         $this->fields[$key] = (empty($label)) ? 'Field with the name of "' . $key . '"' : $label;
 
-        // Keep value for use in each rule
-        $string = $this->getval($key);
-
-        // try each rule function
-        foreach ($this->rules as $rule => $is_true) {
-            if ($is_true) {
-                $function = $this->functions[$rule];
-                $args = $this->arguments[$rule]; // Arguments of rule
-
-                $valid = (empty($args)) ? $function($string) : $function($string, $args);
-                if ($valid === FALSE) {
-                    $this->register_error($rule, $key);
-
-                    $this->rules = array();  // reset rules
-                    return FALSE;
-                }
-            }
-        }
+        // apply filters to the data
+        $this->_applyFilters($key);
+        
+        // validate the piece of data
+        $this->_validate($key, $this->_getVal($key));
 
         // reset rules
         $this->rules = array();
-        return $string;
+        $this->filters = array();
+        return $val;
+    }
+
+    /**
+     * recursively validates a value
+     *
+     * @access protected
+     * @param string $key
+     * @param mixed $val
+     * @return bool
+     */
+    protected function _validate($key, $val)
+    {
+        if (is_array($val)) {
+            
+            // run validations on each element of the array
+            foreach($val as $index => $item) {
+                if (!$this->_validate($key, $item)) {
+                    // halt validation for this value. 
+                    return false;
+                }
+            }
+            return TRUE;
+            
+        } else {
+            
+            // try each rule function
+            foreach ($this->rules as $rule => $is_true) {
+                if ($is_true) {
+                    $function = $this->functions[$rule];
+                    $args = $this->arguments[$rule]; // Arguments of rule
+                    
+                    $valid = (empty($args)) ? $function($val) : $function($val, $args);
+                    
+                    if ($valid === FALSE) {
+                        $this->registerError($rule, $key);
+
+                        $this->rules = array();  // reset rules
+                        $this->filters = array();
+                        return FALSE;
+                    }
+                }
+            }
+            
+            return TRUE;
+        }     
     }
 
     /**
@@ -544,7 +635,7 @@ class FormValidator {
      * @return bool
      */
     public function hasErrors() {
-        return (count($this->errors) > 0) ? TRUE : FALSE;
+        return (count($this->errors) > 0);
     }
 
     /**
@@ -567,12 +658,50 @@ class FormValidator {
     }
 
     /**
-     * getval
+     * _getVal with added support for retrieving values from numeric and
+     * associative multi-dimensional arrays. When doing so, use DOT notation
+     * to indicate a break in keys, i.e.:
+     *
+     * key = "one.two.three"
+     *
+     * would search the array:
+     *
+     * array('one' => array(
+     *      'two' => array(
+     *          'three' => 'RETURN THIS'
+     *      )
+     * );
+     * 
      * @param string $key
      * @return mixed
      */
-    private function getval($key) {
-        return (isset($this->data[$key])) ? $this->data[$key] : FALSE;
+    protected function _getVal($key) {
+        // handle multi-dimensional arrays
+        if (strpos($key, '.') !== FALSE) {
+            $arrData = NULL;
+            $keys = explode('.', $key);
+            $keyLen = count($keys);
+            for ($i = 0; $i < $keyLen; ++$i) {
+                if (trim($keys[$i]) == '') {
+                    return false;
+                } else {
+                    if (is_null($arrData)) {
+                        if (!isset($this->data[$keys[$i]])) {
+                            return false;
+                        }
+                        $arrData = $this->data[$keys[$i]];
+                    } else {
+                        if (!isset($arrData[$keys[$i]])) {
+                            return false;
+                        }
+                        $arrData = $arrData[$keys[$i]];
+                    }
+                }
+            }
+            return $arrData;
+        } else {
+            return (isset($this->data[$key])) ? $this->data[$key] : FALSE;
+        }
     }
 
     /**
@@ -582,7 +711,7 @@ class FormValidator {
      * @param string $key
      * @param string $message
      */
-    private function register_error($rule, $key, $message = null) {
+    protected function registerError($rule, $key, $message = null) {
         if (empty($message)) {
             $message = $this->messages[$rule];
         }
@@ -598,7 +727,7 @@ class FormValidator {
      * @param string $message
      * @param array $args
      */
-    private function set_rule($rule, $function, $message = '', $args = array()) {
+    protected function setRule($rule, $function, $message = '', $args = array()) {
         if (!array_key_exists($rule, $this->rules)) {
             $this->rules[$rule] = TRUE;
             if (!array_key_exists($rule, $this->functions)) {
@@ -620,7 +749,8 @@ class FormValidator {
      * @param array $args
      * @return string
      */
-    private static function getDefaultMessage($rule, $args = null) {
+    protected static function getDefaultMessage($rule, $args = null) {
+        
         switch ($rule) {
             case 'email':
                 $message = '%s is an invalid email address.';
@@ -738,6 +868,3 @@ class FormValidator {
     }
 
 }
-?>
-
-
