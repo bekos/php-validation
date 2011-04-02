@@ -1,7 +1,7 @@
 <?php
 require_once '../Validator.php';
 
-class FormValidatorTest extends PHPUnit_Framework_TestCase
+class ValidatorTest extends PHPUnit_Framework_TestCase
 {
     protected $_validator;
     
