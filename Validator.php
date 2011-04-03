@@ -23,7 +23,7 @@ class Validator {
      *
      * @param array $data
      */
-    function __construct($data = null) {
+    function __construct(array $data = null) {
         if (!empty($data)) $this->setData($data);
     }
 
@@ -34,7 +34,7 @@ class Validator {
      * @param mixed $data
      * @return FormValidator
      */
-    public function setData($data) {
+    public function setData(array $data) {
         $this->data = $data;
         return $this;
     }
@@ -162,7 +162,7 @@ class Validator {
      * @return FormValidator
      */
     public function between($min, $max, $include = TRUE, $message = null) {
-        $message = self::getDefaultMessage(__FUNCTION__, array($min, $max, $include));
+        $message = $this->_getDefaultMessage(__FUNCTION__, array($min, $max, $include));
 
         $this->min($min, $include, $message)->max($max, $include, $message);
         return $this;
@@ -177,7 +177,7 @@ class Validator {
      */
     public function minlength($len, $message = null) {
         $this->setRule(__FUNCTION__, function($string, $args) {
-                    return (strlen(trim($string)) < $args[0]) ? FALSE : TRUE;
+                    return !(strlen(trim($string)) < $args[0]);
                 }, $message, array($len));
         return $this;
     }
@@ -191,7 +191,7 @@ class Validator {
      */
     public function maxlength($len, $message = null) {
         $this->setRule(__FUNCTION__, function($string, $args) {
-                    return (strlen(trim($string)) > $args[0]) ? FALSE : TRUE;
+                    return !(strlen(trim($string)) > $args[0]);
                 }, $message, array($len));
         return $this;
     }
@@ -205,7 +205,7 @@ class Validator {
      */
     public function length($len, $message = null) {
         $this->setRule(__FUNCTION__, function($string, $args) {
-                    return (strlen(trim($string)) == $args[0]) ? TRUE : FALSE;
+                    return (strlen(trim($string)) == $args[0]);
                 }, $message, array($len));
         return $this;
     }
@@ -220,7 +220,7 @@ class Validator {
      */
     public function matches($field, $label, $message = null) {
         $this->setRule(__FUNCTION__, function($string, $args) {
-                    return ((string) $args[0] == (string) $string) ? TRUE : FALSE;
+                    return ((string) $args[0] == (string) $string);
                 }, $message, array($this->_getVal($field), $label));
         return $this;
     }
@@ -235,7 +235,7 @@ class Validator {
      */
     public function notmatches($field, $label, $message = null) {
         $this->setRule(__FUNCTION__, function($string, $args) {
-                    return ((string) $args[0] == (string) $string) ? FALSE : TRUE;
+                    return !((string) $args[0] == (string) $string);
                 }, $message, array($this->_getVal($field), $label));
         return $this;
     }
@@ -308,7 +308,7 @@ class Validator {
      */
     public function ip($message = null) {
         $this->setRule(__FUNCTION__, function($string) {
-                    return (strlen(trim($string)) === 0 || filter_var($string, FILTER_VALIDATE_IP)) ? TRUE : FALSE;
+                    return (strlen(trim($string)) === 0 || filter_var($string, FILTER_VALIDATE_IP) !== FALSE);
                 }, $message);
         return $this;
     }
@@ -321,7 +321,7 @@ class Validator {
      */
     public function url($message = null) {
         $this->setRule(__FUNCTION__, function($string) {
-                    return (strlen(trim($string)) === 0 || filter_var($string, FILTER_VALIDATE_URL)) ? TRUE : FALSE;
+                    return (strlen(trim($string)) === 0 || filter_var($string, FILTER_VALIDATE_URL) !== FALSE);
                 }, $message);
         return $this;
     }
@@ -331,7 +331,7 @@ class Validator {
      *
      * @return string
      */
-    protected static function getDefaultDateFormat() {
+    protected function _getDefaultDateFormat() {
         return 'd/m/Y';
     }
 
@@ -343,7 +343,7 @@ class Validator {
      */
     public function date($format = null, $separator = null, $message = null) {
         if (empty($format)) {
-            $format = self::getDefaultDateFormat();
+            $format = $this->_getDefaultDateFormat();
         }
 
         $this->setRule(__FUNCTION__, function($string, $args) {
@@ -389,7 +389,7 @@ class Validator {
      */
     public function mindate($date = 0, $format = null, $message = null) {
         if (empty($format)) {
-            $format = self::getDefaultDateFormat();
+            $format = $this->_getDefaultDateFormat();
         }
         if (is_numeric($date)) {
             $date = new DateTime($date . ' days'); // Days difference from today
@@ -419,7 +419,7 @@ class Validator {
      */
     public function maxdate($date = 0, $format = null, $message = null) {
         if (empty($format)) {
-            $format = self::getDefaultDateFormat();
+            $format = $this->_getDefaultDateFormat();
         }
         if (is_numeric($date)) {
             $date = new DateTime($date . ' days'); // Days difference from today
@@ -434,7 +434,7 @@ class Validator {
                     $format = $args[1];
                     $limitDate = $args[0];
 
-                    return ($limitDate < DateTime::createFromFormat($format, $string)) ? FALSE : TRUE;
+                    return !($limitDate < DateTime::createFromFormat($format, $string));
                 }, $message, array($date, $format));
         return $this;
     }
@@ -523,7 +523,7 @@ class Validator {
      * @param mixed $callback
      * @return FormValidator
      */
-    public function filter($callback, $global = false) {
+    public function filter($callback) {
         if(is_callable($callback)) {
             $this->filters[] = $callback;
         }
@@ -549,8 +549,7 @@ class Validator {
      * @param mixed $val reference
      * @return void
      */
-    protected function _applyFilter(&$val)
-    {
+    protected function _applyFilter(&$val) {
         if (is_array($val)) {
             foreach($val as $key => &$item) {
                 $this->_applyFilter($item);
@@ -574,9 +573,11 @@ class Validator {
 
         // apply filters to the data
         $this->_applyFilters($key);
+
+        $val = $this->_getVal($key);
         
         // validate the piece of data
-        $this->_validate($key, $this->_getVal($key));
+        $this->_validate($key, $val);
 
         // reset rules
         $this->rules = array();
@@ -727,7 +728,7 @@ class Validator {
      * @param string $message
      * @param array $args
      */
-    protected function setRule($rule, $function, $message = '', $args = array()) {
+    public function setRule($rule, $function, $message = '', $args = array()) {
         if (!array_key_exists($rule, $this->rules)) {
             $this->rules[$rule] = TRUE;
             if (!array_key_exists($rule, $this->functions)) {
@@ -738,7 +739,7 @@ class Validator {
             }
             $this->arguments[$rule] = $args; // Specific arguments for rule
 
-            $this->messages[$rule] = (empty($message)) ? self::getDefaultMessage($rule, $args) : $message;
+            $this->messages[$rule] = (empty($message)) ? $this->_getDefaultMessage($rule, $args) : $message;
         }
     }
 
@@ -749,7 +750,7 @@ class Validator {
      * @param array $args
      * @return string
      */
-    protected static function getDefaultMessage($rule, $args = null) {
+    protected function _getDefaultMessage($rule, $args = null) {
         
         switch ($rule) {
             case 'email':
