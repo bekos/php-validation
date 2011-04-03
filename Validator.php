@@ -235,7 +235,7 @@ class Validator {
      */
     public function notmatches($field, $label, $message = null) {
         $this->setRule(__FUNCTION__, function($string, $args) {
-                    return !((string) $args[0] == (string) $string);
+                    return ((string) $args[0] != (string) $string);
                 }, $message, array($this->_getVal($field), $label));
         return $this;
     }
@@ -351,32 +351,14 @@ class Validator {
                         return TRUE;
                     }
 
-                    $separator = $args[1];
-                    $dt = (is_null($separator)) ? preg_split('/[-\.\/ ]/', $string) : explode($separator, $string);
-
-                    if ((count($dt) != 3) || !is_numeric($dt[2]) || !is_numeric($dt[1]) || !is_numeric($dt[0])) {
+                    $date = @strtotime($string);
+                    
+                    if($date === FALSE) {
                         return FALSE;
                     }
-
-                    $dateToCheck = array();
-                    $format = explode('/', $args[0]);
-                    foreach ($format as $i => $f) {
-                        switch ($f) {
-                            case 'Y':
-                                $dateToCheck[2] = $dt[$i];
-                                break;
-
-                            case 'm':
-                                $dateToCheck[1] = $dt[$i];
-                                break;
-
-                            case 'd':
-                                $dateToCheck[0] = $dt[$i];
-                                break;
-                        }
-                    }
-
-                    return (checkdate($dateToCheck[1], $dateToCheck[0], $dateToCheck[2]) === FALSE) ? FALSE : TRUE;
+                    
+                    list($m, $d, $y) = explode("/", @date("m/d/Y"));
+                    return checkdate($m, $d, $y);
                 }, $message, array($format, $separator));
         return $this;
     }

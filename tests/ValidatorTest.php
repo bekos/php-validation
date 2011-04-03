@@ -171,19 +171,9 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
                     ->validate('float');
 
         $this->assertFalse($validator->hasErrors());
-    }
-    
-    /**
-     * test the float rule with invalid value
-     */
-    public function testValidateFloatInvalidStringValue()
-    {
-        $validator = $this->_validator;
         
-        $data = array(
-            'float' => 'test'
-        );
-    
+        $data['float'] = 'test';
+        
         $validator->setData($data)
                     ->float()
                     ->validate('float');
@@ -207,19 +197,9 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
                     ->validate('integer');
 
         $this->assertFalse($validator->hasErrors());
-    }
-    
-    /**
-     * test the integer rule with invalid value
-     */
-    public function testValidateIntegerInvalidStringValue()
-    {
-        $validator = $this->_validator;
         
-        $data = array(
-            'integer' => 'test'
-        );
-    
+        $data['integer'] = 'test';
+        
         $validator->setData($data)
                     ->integer()
                     ->validate('integer');
@@ -243,19 +223,9 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
                     ->validate('digits');
 
         $this->assertFalse($validator->hasErrors());
-    }
-    
-    /**
-     * test the digits rule with invalid value
-     */
-    public function testValidateDigitsInvalidStringValue()
-    {
-        $validator = $this->_validator;
         
-        $data = array(
-            'digits' => 'test'
-        );
-    
+        $data['digits'] = 'test';
+        
         $validator->setData($data)
                     ->digits()
                     ->validate('digits');
@@ -279,23 +249,211 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
                     ->validate('min');
 
         $this->assertFalse($validator->hasErrors());
+        
+        $validator->setData($data)
+                    ->min(40)
+                    ->validate('min');
+
+        $this->assertTrue($validator->hasErrors());
     }
     
     /**
-     * test the min rule with invalid value
+     * test the max rule
      */
-    public function testValidateMinInvalidValue()
+    public function testValidateMax()
     {
         $validator = $this->_validator;
         
         $data = array(
-            'min' => 5
+            'max' => 29
         );
     
         $validator->setData($data)
-                    ->min(30)
-                    ->validate('min');
+                    ->max(30)
+                    ->validate('max');
 
+        $this->assertFalse($validator->hasErrors());
+        
+        $validator->setData($data)
+                    ->max(20)
+                    ->validate('max');
+
+        $this->assertTrue($validator->hasErrors());
+    }
+    
+    /**
+     * test the between rule
+     */
+    public function testValidateBetween()
+    {
+        $validator = $this->_validator;
+        
+        $data = array(
+            'between' => 35
+        );
+    
+        $validator->setData($data)
+                    ->between(30, 40)
+                    ->validate('between');
+
+        $this->assertFalse($validator->hasErrors());
+
+        $validator->setData($data)
+                    ->between(40, 50)
+                    ->validate('between');
+                    
+        $this->assertTrue($validator->hasErrors());
+    }
+    
+    /**
+     * test the minLength rule
+     */
+    public function testValidateMinLength()
+    {
+        $validator = $this->_validator;
+        
+        $data = array(
+            'minlength' => 'this is a string'
+        );
+    
+        $validator->setData($data)
+                    ->minlength(10)
+                    ->validate('minlength');
+
+        $this->assertFalse($validator->hasErrors());
+
+        $validator->setData($data)
+                    ->minlength(60)
+                    ->validate('minlength');
+                    
+        $this->assertTrue($validator->hasErrors());
+    }
+    
+    /**
+     * test the minLength rule
+     */
+    public function testValidateMaxLength()
+    {
+        $validator = $this->_validator;
+        
+        $data = array(
+            'maxlength' => 'this is a string'
+        );
+    
+        $validator->setData($data)
+                    ->maxlength(20)
+                    ->validate('maxlength');
+
+        $this->assertFalse($validator->hasErrors());
+
+        $validator->setData($data)
+                    ->maxlength(5)
+                    ->validate('maxlength');
+                    
+        $this->assertTrue($validator->hasErrors());
+    }
+    
+    /**
+     * test the minLength rule
+     */
+    public function testValidateLength()
+    {
+        $validator = $this->_validator;
+        
+        $data = array(
+            'length' => 'this is a string'
+        );
+    
+        $validator->setData($data)
+                    ->length(16)
+                    ->validate('length');
+
+        $this->assertFalse($validator->hasErrors());
+
+        $validator->setData($data)
+                    ->length(5)
+                    ->validate('length');
+                    
+        $this->assertTrue($validator->hasErrors());
+    }
+    
+    /**
+     * test the matches rule
+     */
+    public function testValidateMatches()
+    {
+        $validator = $this->_validator;
+        
+        $data = array(
+            'password' => 'testpass',
+            'password_confirm' => 'testpass'
+        );
+    
+        $validator->setData($data)
+                    ->matches('password_confirm', 'Password Confirmation')
+                    ->validate('password');
+
+        $this->assertFalse($validator->hasErrors());
+
+        $data['password_confirm'] = 'Oh Noes I forgot what I types!';
+
+        $validator->setData($data)
+                    ->matches('password_confirmaton', 'Password Confirmation')
+                    ->validate('password');
+                    
+        $this->assertTrue($validator->hasErrors());
+    }
+    
+    /**
+     * test the notmatches rule
+     */
+    public function testValidateNotMatches()
+    {
+        $validator = $this->_validator;
+
+        $data = array(
+            'password' => 'test',
+            'password_confirm' => 'another test'
+        );
+    
+        $validator->setData($data)
+                    ->notmatches('password_confirm', 'Password Confirmation')
+                    ->validate('password');
+
+        $this->assertFalse($validator->hasErrors());
+
+        $data['password_confirm'] = 'test';
+
+        $validator->setData($data)
+                    ->notmatches('password_confirm', 'Password Confirmation')
+                    ->validate('password');
+
+        $this->assertTrue($validator->hasErrors());
+    }
+    
+    /**
+     * test the date rule
+     */
+    public function testValidateDate()
+    {
+        $validator = $this->_validator;
+
+        $data = array(
+            'date' => '10/20/2010',
+        );
+    
+        $validator->setData($data)
+                    ->date('m/d/Y')
+                    ->validate('date');
+                    
+        $this->assertFalse($validator->hasErrors());
+        
+        $data['date'] = 'test';
+        
+        $validator->setData($data)
+                    ->date('m/d/Y')
+                    ->validate('date');
+                    
         $this->assertTrue($validator->hasErrors());
     }
 }
