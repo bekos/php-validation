@@ -351,14 +351,32 @@ class Validator {
                         return TRUE;
                     }
 
-                    $date = @strtotime($string);
-                    
-                    if($date === FALSE) {
+                    $separator = $args[1];
+                    $dt = (is_null($separator)) ? preg_split('/[-\.\/ ]/', $string) : explode($separator, $string);
+
+                    if ((count($dt) != 3) || !is_numeric($dt[2]) || !is_numeric($dt[1]) || !is_numeric($dt[0])) {
                         return FALSE;
                     }
-                    
-                    list($m, $d, $y) = explode("/", @date("m/d/Y"));
-                    return checkdate($m, $d, $y);
+
+                    $dateToCheck = array();
+                    $format = explode('/', $args[0]);
+                    foreach ($format as $i => $f) {
+                        switch ($f) {
+                            case 'Y':
+                                $dateToCheck[2] = $dt[$i];
+                                break;
+
+                            case 'm':
+                                $dateToCheck[1] = $dt[$i];
+                                break;
+
+                            case 'd':
+                                $dateToCheck[0] = $dt[$i];
+                                break;
+                        }
+                    }
+
+                    return checkdate($dateToCheck[1], $dateToCheck[0], $dateToCheck[2]);
                 }, $message, array($format, $separator));
         return $this;
     }
