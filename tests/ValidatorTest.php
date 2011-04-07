@@ -456,4 +456,25 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
                     
         $this->assertTrue($validator->hasErrors());
     }
+    
+    public function testValidateCallback()
+    {
+        $validator = $this->_validator;
+        
+        $data = array(
+            'test' => 'test'
+        );
+        
+        $validator
+            ->setData($data)
+            ->callback(function($val) {
+                return true;
+            })
+            ->validate('test');
+    }
+    
+    public function testValidateFiles()
+    {
+        
+    }
 }

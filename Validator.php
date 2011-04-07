@@ -49,7 +49,8 @@ class Validator {
      */
     public function email($message = null) {
         $this->setRule(__FUNCTION__, function($email) {
-                    return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) !== FALSE);                }, $message);
+            return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) !== FALSE);
+        }, $message);
         return $this;
     }
 
@@ -60,9 +61,12 @@ class Validator {
      * @return FormValidator
      */
     public function required($message = null) {
-        $this->setRule(__FUNCTION__, function($string) {
-                    return !(strlen(trim($string)) === 0);
-                }, $message);
+        $this->setRule(__FUNCTION__, function($val) {
+            if (!is_array($val)) {
+                $val = trim($val);
+            }
+            return !empty($val);
+        }, $message);
         return $this;
     }
 
@@ -341,43 +345,21 @@ class Validator {
      * @param string $message
      * @return FormValidator
      */
-    public function date($format = null, $separator = null, $message = null) {
-        if (empty($format)) {
-            $format = $this->_getDefaultDateFormat();
-        }
-
+    public function date($message = null) {
         $this->setRule(__FUNCTION__, function($string, $args) {
-                    if (strlen(trim($string)) === 0) {
-                        return TRUE;
-                    }
 
-                    $separator = $args[1];
-                    $dt = (is_null($separator)) ? preg_split('/[-\.\/ ]/', $string) : explode($separator, $string);
+            if (strlen(trim($string)) === 0) {
+                return TRUE;
+            }
 
-                    if ((count($dt) != 3) || !is_numeric($dt[2]) || !is_numeric($dt[1]) || !is_numeric($dt[0])) {
-                        return FALSE;
-                    }
-
-                    $dateToCheck = array();
-                    $format = explode('/', $args[0]);
-                    foreach ($format as $i => $f) {
-                        switch ($f) {
-                            case 'Y':
-                                $dateToCheck[2] = $dt[$i];
-                                break;
-
-                            case 'm':
-                                $dateToCheck[1] = $dt[$i];
-                                break;
-
-                            case 'd':
-                                $dateToCheck[0] = $dt[$i];
-                                break;
-                        }
-                    }
-
-                    return checkdate($dateToCheck[1], $dateToCheck[0], $dateToCheck[2]);
-                }, $message, array($format, $separator));
+            try {
+                $dt = new DateTime($string, new DateTimeZone("UTC"));
+                return true;
+            } catch(Exception $e) {
+                return false;
+            }
+            
+        }, $message, array($format, $separator));
         return $this;
     }
 
@@ -448,26 +430,26 @@ class Validator {
      */
     public function ccnum($message = null) {
         $this->setRule(__FUNCTION__, function($value) {
-                    $value = str_replace(' ', '', $value);
-                    $length = strlen($value);
+            $value = str_replace(' ', '', $value);
+            $length = strlen($value);
 
-                    if ($length < 13 || $length > 19) {
-                        return FALSE;
-                    }
+            if ($length < 13 || $length > 19) {
+                return FALSE;
+            }
 
-                    $sum = 0;
-                    $weight = 2;
+            $sum = 0;
+            $weight = 2;
 
-                    for ($i = $length - 2; $i >= 0; $i--) {
-                        $digit = $weight * $value[$i];
-                        $sum += floor($digit / 10) + $digit % 10;
-                        $weight = $weight % 2 + 1;
-                    }
+            for ($i = $length - 2; $i >= 0; $i--) {
+                $digit = $weight * $value[$i];
+                $sum += floor($digit / 10) + $digit % 10;
+                $weight = $weight % 2 + 1;
+            }
 
-                    $mod = (10 - $sum % 10) % 10;
+            $mod = (10 - $sum % 10) % 10;
 
-                    return ($mod == $value[$length - 1]);
-                }, $message);
+            return ($mod == $value[$length - 1]);
+        }, $message);
         return $this;
     }
 
@@ -498,20 +480,24 @@ class Validator {
      * @param string $message
      * @return FormValidator
      */
-    public function callback($name, $function, $message='') {
+    public function callback($function, $message = '') {
+        
+        // generate a random name for the callback
+        $name = sha1(uniqid());
+        
         if (is_callable($function)) {
             // set rule and function
             $this->setRule($name, $function, $message);
         } elseif (is_string($function) && preg_match($function, 'callback') !== FALSE) {
             // we can parse this as a regexp. set rule function accordingly.
             $this->setRule($name, function($value) use ($function) {
-                        return ( preg_match($function, $value) ) ? TRUE : FALSE;
-                    }, $message);
+                return ( preg_match($function, $value) ) ? TRUE : FALSE;
+            }, $message);
         } else {
             // just set a rule function to check equality.
             $this->setRule($name, function($value) use ( $function) {
-                        return ( (string) $value === (string) $function ) ? TRUE : FALSE;
-                    }, $message);
+                return ( (string) $value === (string) $function ) ? TRUE : FALSE;
+            }, $message);
         }
         return $this;
     }
