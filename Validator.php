@@ -475,29 +475,31 @@ class Validator {
 
     /**
      * callback
-     * @param string $name
-     * @param mixed $function
-     * @param string $message
-     * @return FormValidator
+     * @param   string  $name
+     * @param   mixed   $function
+     * @param   string  $message
+     * @param   mixed   $params     
+     * @return  FormValidator
      */
-    public function callback($function, $message = '') {
+    public function callback($name, $function, $message = '', $params = NULL) {
         
-        // generate a random name for the callback
-        $name = sha1(uniqid());
-        
-        if (is_callable($function)) {
+        if (is_array($function)) {
+            $this->_set_rule($name, function($value) use($function, $params) {
+                return call_user_func($function, $value, $params);                
+            }, $message);
+        } elseif (is_callable($function)) {
             // set rule and function
-            $this->setRule($name, $function, $message);
+            $this->_set_rule($name, $function, $message);
         } elseif (is_string($function) && preg_match($function, 'callback') !== FALSE) {
             // we can parse this as a regexp. set rule function accordingly.
-            $this->setRule($name, function($value) use ($function) {
-                return ( preg_match($function, $value) ) ? TRUE : FALSE;
-            }, $message);
+            $this->_set_rule($name, function($value) use ($function) {
+                        return ( preg_match($function, $value) ) ? TRUE : FALSE;
+                    }, $message);
         } else {
             // just set a rule function to check equality.
-            $this->setRule($name, function($value) use ( $function) {
-                return ( (string) $value === (string) $function ) ? TRUE : FALSE;
-            }, $message);
+            $this->_set_rule($name, function($value) use ( $function) {
+                        return ( (string) $value === (string) $function ) ? TRUE : FALSE;
+                    }, $message);
         }
         return $this;
     }
