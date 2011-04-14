@@ -60,7 +60,7 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
         );
     
         $validator->setData($data);
-        $validator->email()->validate('emails');
+        $validator->email()->validate('emails', true);
         $this->assertFalse($validator->hasErrors());
     }
     
@@ -81,7 +81,7 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
     
         $validator->setData($data)
                     ->email()
-                    ->validate('emails');
+                    ->validate('emails', true);
 
         $this->assertTrue($validator->hasErrors());
     }
@@ -150,7 +150,7 @@ class ValidatorTest extends PHPUnit_Framework_TestCase
     
         $validator->setData($data)
                     ->required()
-                    ->validate('names');
+                    ->validate('names', true);
 
         $this->assertTrue($validator->hasErrors());
     }
