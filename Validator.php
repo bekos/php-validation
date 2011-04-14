@@ -481,26 +481,29 @@ class Validator {
      * @param   mixed   $params     
      * @return  FormValidator
      */
-    public function callback($name, $function, $message = '', $params = NULL) {
+    public function callback($callback, $message = '', $params = NULL) {
         
-        if (is_array($function)) {
-            $this->_set_rule($name, function($value) use($function, $params) {
-                return call_user_func($function, $value, $params);                
-            }, $message);
-        } elseif (is_callable($function)) {
-            // set rule and function
-            $this->_set_rule($name, $function, $message);
-        } elseif (is_string($function) && preg_match($function, 'callback') !== FALSE) {
-            // we can parse this as a regexp. set rule function accordingly.
-            $this->_set_rule($name, function($value) use ($function) {
-                        return ( preg_match($function, $value) ) ? TRUE : FALSE;
-                    }, $message);
+        if (is_callable($callback)) {
+            
+            if (is_array($callback)) {
+                $func = new ReflectionMethod($callback[0], $callback[1]);
+            } else if (is_string($callback)) {
+                $func = new ReflectionFunction($callback);
+            }
+            
+            if (!empty($func)) {
+                // needs a unique name to avoild collisions in the rules array
+                $name = 'callback_' . sha1(uniqid());
+                $this->_setRule($name, function($value) use ($func, $params, $callback) {
+                    return is_array($callback) ? 
+                            $func->invokeArgs($callback[0], (array) $params) : $func->invokeArgs($callback);
+                });
+            }
+            
         } else {
-            // just set a rule function to check equality.
-            $this->_set_rule($name, function($value) use ( $function) {
-                        return ( (string) $value === (string) $function ) ? TRUE : FALSE;
-                    }, $message);
+            throw new Exception(sprintf('%s is not callable.', $function));
         }
+        
         return $this;
     }
 
