@@ -7,7 +7,7 @@ be custom defined so long as they pass an <code>is_callable()</code> check.
 
 * <strong>filter(<em>$callback</em>)</strong> 
 
-## Filter Examples
+### Filter Examples
 
 <code>
 // standard php filter for valid user ids.
