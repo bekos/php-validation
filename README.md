@@ -9,7 +9,7 @@ be custom defined so long as they pass an <code>is_callable()</code> check.
 
 ### Filter Examples
 
-<code>
+`
 // standard php filter for valid user ids.
 $validator
   ->filter('intval')
@@ -24,7 +24,7 @@ $validator
     $val .= '_custom_formatted';
   })
   ->validate('field_to_be_formatted');
-</code>
+`
 
 ## Available Validation Methods
 
@@ -62,7 +62,7 @@ This validation class has been extended to allow for validation of arrays as wel
 
 To validate specific indices of an array, use dot notation, i.e. 
 
-<code>
+`
 // load the validator
 $validator = new Blackbelt_Validator($_POST);
 
@@ -78,7 +78,7 @@ $validator
 $validator
   ->required('This field is required')
   ->validate('links.1');
-</code>
+`
 
 ## Credits
 
