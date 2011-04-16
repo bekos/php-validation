@@ -2,7 +2,7 @@
 
 This class follows Zend Framework naming conventions for easy drop-in as a substitute to Zend_Validation. If you opt out of using the bulky Zend_Form on your projects, you might choose to use this for quick and painless form validation.
 
-## A Quick Example
+# A Quick Example
 
 The example below shows how to throw validation exceptions with the custom
 exception. You can then retrieve the error messages from the calling method.
@@ -73,7 +73,7 @@ be handled in your Model. This is just a quick example.
         
     }
 
-## Available Validation Methods
+# Available Validation Methods
 
 * <strong>required(<em>$message = null</em>)</strong> - The field value is required.
 * <strong>email(<em>$message = null</em>)</strong> - The field value must be a valid email address string.
@@ -101,7 +101,7 @@ be handled in your Model. This is just a quick example.
 * <strong>oneOf(<em>$allowed, $message = null</em>)</strong> - The field value must be one of the $allowed values. $allowed can be either an array or a comma-separated list of values. If comma separated, do not include spaces unless intended for matching.
 * <strong>callback(<em>$callback, $message = '', $params = null</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
 
-## Validating Arrays and Array Indices
+# Validating Arrays and Array Indices
 
 This validation class has been extended to allow for validation of arrays as well as nested indices of a multi-dimensional array.
 
@@ -125,7 +125,7 @@ To validate specific indices of an array, use dot notation, i.e.
       ->required('This field is required')
       ->validate('links.1');
     
-## Available Pre-Validation Filtering
+# Available Pre-Validation Filtering
 
 You can apply pre-validation filters to your data (<em>i.e. trim, strip_tags, htmlentities</em>). These filters can also
 be custom defined so long as they pass an <code>is_callable()</code> check.
@@ -149,7 +149,7 @@ be custom defined so long as they pass an <code>is_callable()</code> check.
       })
       ->validate('field_to_be_formatted');
 
-## Credits
+# Credits
 
 * Modifications by Corey Ballou and Chris Gutierrez.
 * Forked from Tasos Bekos <tbekos at gmail dot com> which was based on the initial work of "Bretticus". 
