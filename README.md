@@ -9,22 +9,20 @@ be custom defined so long as they pass an <code>is_callable()</code> check.
 
 ### Filter Examples
 
-`
-// standard php filter for valid user ids.
-$validator
-  ->filter('intval')
-  ->min(1)
-  ->validate('user_id');
-
-// custom filter 
-$validator
-  ->filter(function($val) {
-    // bogus formatting of the field 
-    $val = rtrim($val, '/');
-    $val .= '_custom_formatted';
-  })
-  ->validate('field_to_be_formatted');
-`
+    // standard php filter for valid user ids.
+    $validator
+      ->filter('intval')
+      ->min(1)
+      ->validate('user_id');
+    
+    // custom filter 
+    $validator
+      ->filter(function($val) {
+        // bogus formatting of the field 
+        $val = rtrim($val, '/');
+        $val .= '_custom_formatted';
+      })
+      ->validate('field_to_be_formatted');
 
 ## Available Validation Methods
 
@@ -62,23 +60,22 @@ This validation class has been extended to allow for validation of arrays as wel
 
 To validate specific indices of an array, use dot notation, i.e. 
 
-`
-// load the validator
-$validator = new Blackbelt_Validator($_POST);
+    // load the validator
+    $validator = new Blackbelt_Validator($_POST);
+    
+    // ensure $_POST['field']['nested'] exists
+    $validator
+      ->required('The nested field is required.')
+      ->validate('field.nested');
+    
+    // ensure we have the first two numeric indices of $_POST['links'][]
+    $validator
+      ->required('This field is required')
+      ->validate('links.0');
+    $validator
+      ->required('This field is required')
+      ->validate('links.1');
 
-// ensure $_POST['field']['nested'] exists
-$validator
-  ->required('The nested field is required.')
-  ->validate('field.nested');
-
-// ensure we have the first two numeric indices of $_POST['links'][]
-$validator
-  ->required('This field is required')
-  ->validate('links.0');
-$validator
-  ->required('This field is required')
-  ->validate('links.1');
-`
 
 ## Credits
 
