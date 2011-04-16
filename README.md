@@ -82,19 +82,24 @@ To validate specific indices of an array, use dot notation, i.e.
 
 The example below shows how to throw validation exceptions with the custom
 exception. You can then retrieve the error messages from the calling method.
+It is not good practice to validate your data in your controller, this should
+be handled in your Model. This is just a quick example.
 
-    class Example {
+    class ExampleController extends Zend_Controller_Action {
     
         /**
          * Your controller action that handles validation errors, as you would
          * want these errors passed on to the view.
+         *
+         * @access  public
+         * @return  void
          */
         public function indexAction()
         {
             try {
             
                 // validate the data
-                $validData = $this->exampleValidate($_POST);
+                $validData = $this->_validate($_POST);
                 
                 // validation passed because no exception was thrown
                 // ... to something with the $validData ...
@@ -115,8 +120,12 @@ exception. You can then retrieve the error messages from the calling method.
         /**
          * Your user-defined validation handling. The exception section is
          * very important and should always be used.
+         *
+         * @access  private
+         * @param   array   $post
+         * @return  mixed
          */
-        public function exampleValidate($post)
+        private function _validate(array $post = array())
         {
             $validator = new Validator($post);
             $validator
