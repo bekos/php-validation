@@ -78,6 +78,67 @@ To validate specific indices of an array, use dot notation, i.e.
       ->required('This field is required')
       ->validate('links.1');
 
+## A Full Example
+
+The example below shows how to throw validation exceptions with the custom
+exception. You can then retrieve the error messages from the calling method.
+
+    class Example {
+    
+        /**
+         * Your controller action that handles validation errors, as you would
+         * want these errors passed on to the view.
+         */
+        public function indexAction()
+        {
+            try {
+            
+                // validate the data
+                $validData = $this->exampleValidate($_POST);
+                
+                // validation passed because no exception was thrown
+                // ... to something with the $validData ...
+                
+            } catch (Validator_Exception $e) {
+                // retrieve the overall error message to display
+                $message = $e->getMessage();
+                
+                // retrieve all of the errors
+                $errors = $e->getErrors();
+                
+                // the below code is specific to ZF
+                $this->_helper->FlashMessenger(array('error' => $message));
+                $this->_helper->layout->getView()->errors = $errors;
+            }
+        }
+    
+        /**
+         * Your user-defined validation handling. The exception section is
+         * very important and should always be used.
+         */
+        public function exampleValidate($post)
+        {
+            $validator = new Validator($post);
+            $validator
+                ->required('You must supply a name.')
+                ->validate('name', 'Name');
+            $validator
+                ->required('You must supply an email address.')
+                ->email('You must supply a valid email address')
+                ->validate('email', 'Email');
+            
+            // check for errors
+            if ($validator->hasErrors()) {
+                throw new Validator_Exception(
+                    'There were errors in your form.',
+                    $validator->getAllErrors()
+                );
+            }
+        
+            return $validator->getValidData();
+        }
+        
+    }
 
 ## Credits
 
