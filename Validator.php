@@ -4,6 +4,9 @@
  * Form validation library.
  *
  * @author Tasos Bekos <tbekos@gmail.com>
+ * @author Chris Gutierrez <cdotgutierrez@gmail.com>
+ * @author Corey Ballou <ballouc@gmail.com>
+ * @see https://github.com/blackbelt/php-validation
  * @see Based on idea: http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/
  */
 class Validator {
@@ -16,6 +19,7 @@ class Validator {
     protected $arguments = array();
     protected $filters = array();
     protected $data = null;
+	protected $validData = array();
 
     /**
      * Constructor.
@@ -38,7 +42,7 @@ class Validator {
         $this->data = $data;
         return $this;
     }
-    
+
     // ----------------- ADD NEW RULE FUNCTIONS BELOW THIS LINE ----------------
 
     /**
@@ -128,7 +132,7 @@ class Validator {
             $limit = (float) $args[0];
             $inc = (bool) $args[1];
 
-            return ($val > $limit || ($inc === TRUE && $value === $limit));
+            return ($val > $limit || ($inc === TRUE && $val === $limit));
         }, $message, array($limit, $include));
         return $this;
     }
@@ -151,7 +155,7 @@ class Validator {
             $limit = (float) $args[0];
             $inc = (bool) $args[1];
 
-            return ($val < $limit || ($inc === TRUE && $value === $limit));
+            return ($val < $limit || ($inc === TRUE && $val === $limit));
         }, $message, array($limit, $include));
         return $this;
     }
@@ -358,7 +362,7 @@ class Validator {
             } catch(Exception $e) {
                 return false;
             }
-            
+
         }, $message, array($format, $separator));
         return $this;
     }
@@ -366,10 +370,12 @@ class Validator {
     /**
      * Field has to be a date later than or equal to X.
      *
-     * @param string $message
+     * @param   string|int  $date       Limit date
+     * @param   string      $format     Date format
+     * @param   string      $message
      * @return FormValidator
      */
-    public function mindate($date = 0, $format = null, $message = null) {
+    public function minDate($date = 0, $format = null, $message = null) {
         if (empty($format)) {
             $format = $this->_getDefaultDateFormat();
         }
@@ -399,7 +405,7 @@ class Validator {
      * @param string $message
      * @return FormValidator
      */
-    public function maxdate($date = 0, $format = null, $message = null) {
+    public function maxDate($date = 0, $format = null, $message = null) {
         if (empty($format)) {
             $format = $this->_getDefaultDateFormat();
         }
@@ -460,7 +466,7 @@ class Validator {
      * @param string $message
      * @return FormValidator
      */
-    public function oneof($allowed, $message = null) {
+    public function oneOf($allowed, $message = null) {
         if (is_string($allowed)) {
             $allowed = explode(',', $allowed);
         }
@@ -478,32 +484,32 @@ class Validator {
      * @param   string  $name
      * @param   mixed   $function
      * @param   string  $message
-     * @param   mixed   $params     
+     * @param   mixed   $params
      * @return  FormValidator
      */
     public function callback($callback, $message = '', $params = NULL) {
-        
+
         if (is_callable($callback)) {
-            
+
             if (is_array($callback)) {
                 $func = new ReflectionMethod($callback[0], $callback[1]);
             } else if (is_string($callback)) {
                 $func = new ReflectionFunction($callback);
             }
-            
+
             if (!empty($func)) {
                 // needs a unique name to avoild collisions in the rules array
                 $name = 'callback_' . sha1(uniqid());
                 $this->_setRule($name, function($value) use ($func, $params, $callback) {
-                    return is_array($callback) ? 
+                    return is_array($callback) ?
                             $func->invokeArgs($callback[0], (array) $params) : $func->invokeArgs($callback);
                 });
             }
-            
+
         } else {
             throw new Exception(sprintf('%s is not callable.', $function));
         }
-        
+
         return $this;
     }
 
@@ -528,7 +534,7 @@ class Validator {
      * @access protected
      * @param string $key
      * @return void
-     */ 
+     */
     protected function _applyFilters($key) {
         $this->_applyFilter($this->data[$key]);
     }
@@ -548,7 +554,7 @@ class Validator {
         } else {
             foreach($this->filters as $filter) {
                 $val = $filter($val);
-            }            
+            }
         }
     }
 
@@ -585,27 +591,27 @@ class Validator {
      * @return bool
      */
     protected function _validate($key, $val, $recursive = false)
-    {        
+    {
         if ($recursive && is_array($val)) {
             // run validations on each element of the array
             foreach($val as $index => $item) {
                 if (!$this->_validate($key, $item, $recursive)) {
-                    // halt validation for this value. 
+                    // halt validation for this value.
                     return FALSE;
                 }
             }
             return TRUE;
-            
+
         } else {
-            
+
             // try each rule function
             foreach ($this->rules as $rule => $is_true) {
                 if ($is_true) {
                     $function = $this->functions[$rule];
                     $args = $this->arguments[$rule]; // Arguments of rule
-                    
+
                     $valid = (empty($args)) ? $function($val) : $function($val, $args);
-                    
+
                     if ($valid === FALSE) {
                         $this->registerError($rule, $key);
 
@@ -615,9 +621,10 @@ class Validator {
                     }
                 }
             }
-            
+
+			$this->validData[$key] = $val;
             return TRUE;
-        }     
+        }
     }
 
     /**
@@ -648,6 +655,11 @@ class Validator {
         return ($keys == true) ? $this->errors : array_values($this->errors);
     }
 
+    public function getValidData()
+    {
+        return $this->validData;
+    }
+
     /**
      * _getVal with added support for retrieving values from numeric and
      * associative multi-dimensional arrays. When doing so, use DOT notation
@@ -662,7 +674,7 @@ class Validator {
      *          'three' => 'RETURN THIS'
      *      )
      * );
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -741,7 +753,7 @@ class Validator {
      * @return string
      */
     protected function _getDefaultMessage($rule, $args = null) {
-        
+
         switch ($rule) {
             case 'email':
                 $message = '%s is an invalid email address.';
