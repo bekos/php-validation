@@ -1,32 +1,79 @@
 # A PHP 5.3 Class for Easy Form Validation
 
-## Available Pre-Validation Filtering
+This class follows Zend Framework naming conventions for easy drop-in as a substitute to Zend_Validation. If you opt out of using the bulky Zend_Form on your projects, you might choose to use this for quick and painless form validation.
 
-You can apply pre-validation filters to your data (<em>i.e. trim, strip_tags, htmlentities</em>). These filters can also
-be custom defined so long as they pass an <code>is_callable()</code> check.
+# A Quick Example
 
-* <strong>filter(<em>$callback</em>)</strong> 
+The example below shows how to throw validation exceptions with the custom
+exception. You can then retrieve the error messages from the calling method.
+It is not good practice to validate your data in your controller, this should
+be handled in your Model. This is just a quick example.
 
-## Filter Examples
+    class ExampleController extends Zend_Controller_Action {
+    
+        /**
+         * Your controller action that handles validation errors, as you would
+         * want these errors passed on to the view.
+         *
+         * @access  public
+         * @return  void
+         */
+        public function indexAction()
+        {
+            try {
+            
+                // validate the data
+                $validData = $this->_validate($_POST);
+                
+                // validation passed because no exception was thrown
+                // ... to something with the $validData ...
+                
+            } catch (Validator_Exception $e) {
+                // retrieve the overall error message to display
+                $message = $e->getMessage();
+                
+                // retrieve all of the errors
+                $errors = $e->getErrors();
+                
+                // the below code is specific to ZF
+                $this->_helper->FlashMessenger(array('error' => $message));
+                $this->_helper->layout->getView()->errors = $errors;
+            }
+        }
+    
+        /**
+         * Your user-defined validation handling. The exception section is
+         * very important and should always be used.
+         *
+         * @access  private
+         * @param   array   $post
+         * @return  mixed
+         */
+        private function _validate(array $post = array())
+        {
+            $validator = new Validator($post);
+            $validator
+                ->required('You must supply a name.')
+                ->validate('name', 'Name');
+            $validator
+                ->required('You must supply an email address.')
+                ->email('You must supply a valid email address')
+                ->validate('email', 'Email');
+            
+            // check for errors
+            if ($validator->hasErrors()) {
+                throw new Validator_Exception(
+                    'There were errors in your form.',
+                    $validator->getAllErrors()
+                );
+            }
+        
+            return $validator->getValidData();
+        }
+        
+    }
 
-<code>
-// standard php filter for valid user ids.
-$validator
-  ->filter('intval')
-  ->min(1)
-  ->validate('user_id');
-
-// custom filter 
-$validator
-  ->filter(function($val) {
-    // bogus formatting of the field 
-    $val = rtrim($val, '/');
-    $val .= '_custom_formatted';
-  })
-  ->validate('field_to_be_formatted');
-</code>
-
-## Available Validation Methods
+# Available Validation Methods
 
 * <strong>required(<em>$message = null</em>)</strong> - The field value is required.
 * <strong>email(<em>$message = null</em>)</strong> - The field value must be a valid email address string.
@@ -54,7 +101,7 @@ $validator
 * <strong>oneOf(<em>$allowed, $message = null</em>)</strong> - The field value must be one of the $allowed values. $allowed can be either an array or a comma-separated list of values. If comma separated, do not include spaces unless intended for matching.
 * <strong>callback(<em>$callback, $message = '', $params = null</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
 
-## Validating Arrays and Array Indices
+# Validating Arrays and Array Indices
 
 This validation class has been extended to allow for validation of arrays as well as nested indices of a multi-dimensional array.
 
@@ -62,25 +109,47 @@ This validation class has been extended to allow for validation of arrays as wel
 
 To validate specific indices of an array, use dot notation, i.e. 
 
-<code>
-// load the validator
-$validator = new Blackbelt_Validator($_POST);
+    // load the validator
+    $validator = new Validator($_POST);
+    
+    // ensure $_POST['field']['nested'] exists
+    $validator
+      ->required('The nested field is required.')
+      ->validate('field.nested');
+    
+    // ensure we have the first two numeric indices of $_POST['links'][]
+    $validator
+      ->required('This field is required')
+      ->validate('links.0');
+    $validator
+      ->required('This field is required')
+      ->validate('links.1');
+    
+# Available Pre-Validation Filtering
 
-// ensure $_POST['field']['nested'] exists
-$validator
-  ->required('The nested field is required.')
-  ->validate('field.nested');
+You can apply pre-validation filters to your data (<em>i.e. trim, strip_tags, htmlentities</em>). These filters can also
+be custom defined so long as they pass an <code>is_callable()</code> check.
 
-// ensure we have the first two numeric indices of $_POST['links'][]
-$validator
-  ->required('This field is required')
-  ->validate('links.0');
-$validator
-  ->required('This field is required')
-  ->validate('links.1');
-</code>
+* <strong>filter(<em>$callback</em>)</strong> 
 
-## Credits
+### Filter Examples
+
+    // standard php filter for valid user ids.
+    $validator
+      ->filter('intval')
+      ->min(1)
+      ->validate('user_id');
+    
+    // custom filter 
+    $validator
+      ->filter(function($val) {
+        // bogus formatting of the field 
+        $val = rtrim($val, '/');
+        $val .= '_custom_formatted';
+      })
+      ->validate('field_to_be_formatted');
+
+# Credits
 
 * Modifications by Corey Ballou and Chris Gutierrez.
 * Forked from Tasos Bekos <tbekos at gmail dot com> which was based on the initial work of "Bretticus". 
