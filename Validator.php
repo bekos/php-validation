@@ -5,6 +5,7 @@ require_once 'BaseValidator.php';
 /**
  * Validation rules.
  *
+ * @see https://github.com/bekos/php-validation
  * @author Tasos Bekos <tbekos@gmail.com>
  */
 class Validator extends BaseValidator {
@@ -105,7 +106,7 @@ class Validator extends BaseValidator {
      */
     public function email($message = null) {
         $this->setRule(__FUNCTION__, function($email) {
-                    return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) === TRUE);
+                    return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) !== FALSE);
                 }, $message);
         return $this;
     }
@@ -118,11 +119,7 @@ class Validator extends BaseValidator {
      */
     public function required($message = null) {
         $this->setRule(__FUNCTION__, function($string) {
-                    if (is_array($string)) {
-                        return!(empty($string));
-                    } else {
-                        return (strlen(trim($string)) > 0);
-                    }
+                    return (strlen(trim($string)) > 0);
                 }, $message);
         return $this;
     }

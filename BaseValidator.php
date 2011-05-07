@@ -7,6 +7,7 @@
  * Extend to provide specific rules and error messages.
  *
  * @author Tasos Bekos <tbekos@gmail.com>
+ * @see https://github.com/bekos/php-validation
  * @see Based on idea: http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/
  * @abstract
  */
@@ -106,7 +107,7 @@ abstract class BaseValidator {
         if (is_null($data)) {
             $data = 'POST'; // No need to duplicate POST variables
         }
-        $this->data = $data;
+        $this->data = (is_string($data)) ? strtoupper($data) : $data;
 
         // Error messages
         $this->errorMessages = $this->buildErrorMessages();
@@ -212,14 +213,21 @@ abstract class BaseValidator {
      * @return mixed
      */
     protected function getVal($key) {
+        $pos = strpos($key, '.'); // Whether we have array with dot key notation
+        $index = FALSE;
+        if ($pos !== FALSE) {
+            $index = substr($key, $pos + 1);
+            $key = substr($key, 0, $pos);
+        }
+
         if (is_string($this->data)) {
             switch ($this->data) {
                 case 'POST':
-                    return (isset($_POST[$key])) ? $_POST[$key] : FALSE;
+                    $value = (isset($_POST[$key])) ? $_POST[$key] : FALSE;
                     break;
 
                 case 'GET':
-                    return (isset($_GET[$key])) ? $_GET[$key] : FALSE;
+                    $value = (isset($_GET[$key])) ? $_GET[$key] : FALSE;
                     break;
 
                 default:
@@ -227,7 +235,39 @@ abstract class BaseValidator {
                     break;
             }
         } else {
-            return (isset($this->data[$key])) ? $this->data[$key] : FALSE;
+            $value = (isset($this->data[$key])) ? $this->data[$key] : FALSE;
+        }
+
+        if ($index !== FALSE && $value !== FALSE && is_array($value)) {
+            // Get value in multidimensional array with dot key notation
+            $value = self::_getVal(explode('.', $index), $value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Navigate through a [multidimensional] array looking for a particular index.
+     *
+     * @param array $index The index sequence we are navigating down.
+     * @param array $value The portion of the array to process.
+     * @return mixed
+     */
+    private static function _getVal($index, $value) {
+        if (is_array($index) && count($index)) {
+            $currentIndex = array_shift($index);
+        }
+
+        if (isset($currentIndex) && isset($value[$currentIndex])) {
+            $value = $value[$currentIndex];
+        } else {
+            return FALSE;
+        }
+
+        if (is_array($value) && count($value)) {
+            return self::_getVal($index, $value);
+        } else {
+            return $value;
         }
     }
 
@@ -314,15 +354,25 @@ abstract class BaseValidator {
      * @return boolean TRUE if no error found, FALSE otherwise.
      */
     private function _validate($val, $key) {
-        // try each rule function
-        foreach ($this->rules as $rule) {
-            $ruleId = $rule['id'];
-            $function = $this->functions[$ruleId];
+        if (is_array($val)) {
+            // Run validations on every element of array.
+            // If one of them fails, return FALSE.
+            foreach ($val as $_val) {
+                if ($this->_validate($_val, $key) === FALSE) {
+                    return FALSE;
+                }
+            }
+        } else {
+            // Try each rule function
+            foreach ($this->rules as $rule) {
+                $ruleId = $rule['id'];
+                $function = $this->functions[$ruleId];
 
-            $valid = (isset($rule['args'])) ? $function($val, $rule['args']) : $function($val);
-            if ($valid === FALSE) {
-                $this->registerError($rule, $key);
-                return FALSE;
+                $valid = (isset($rule['args'])) ? $function($val, $rule['args']) : $function($val);
+                if ($valid === FALSE) {
+                    $this->registerError($rule, $key);
+                    return FALSE;
+                }
             }
         }
 
@@ -340,8 +390,6 @@ abstract class BaseValidator {
             $message = $rule['msg']; // Custom message
         } else {
             $ruleId = $rule['id'];
-
-
 
             $args = (isset($rule['args'])) ? $rule['args'] : null;
             $message = $this->getErrorMessage($ruleId, $args);
