@@ -53,7 +53,46 @@ class Validator {
      */
     public function email($message = null) {
         $this->setRule(__FUNCTION__, function($email) {
-            return (strlen($email) === 0 || filter_var($email, FILTER_VALIDATE_EMAIL) !== FALSE);
+            if (strlen($email) == 0) return true;
+            $isValid = true;
+            $atIndex = strrpos($email, '@');
+            if (is_bool($atIndex) && !$atIndex) {
+               $isValid = false;
+            } else {
+                $domain = substr($email, $atIndex+1);
+                $local = substr($email, 0, $atIndex);
+                $localLen = strlen($local);
+                $domainLen = strlen($domain);
+                if ($localLen < 1 || $localLen > 64) {
+                    $isValid = false;
+                } else if ($domainLen < 1 || $domainLen > 255) {
+                    // domain part length exceeded
+                    $isValid = false;
+                } else if ($local[0] == '.' || $local[$localLen-1] == '.') {
+                    // local part starts or ends with '.'
+                    $isValid = false;
+                } else if (preg_match('/\\.\\./', $local)) {
+                    // local part has two consecutive dots
+                    $isValid = false;
+                } else if (!preg_match('/^[A-Za-z0-9\\-\\.]+$/', $domain)) {
+                    // character not valid in domain part
+                    $isValid = false;
+                } else if (preg_match('/\\.\\./', $domain)) {
+                    // domain part has two consecutive dots
+                    $isValid = false;
+                } else if (!preg_match('/^(\\\\.|[A-Za-z0-9!#%&`_=\\/$\'*+?^{}|~.-])+$/', str_replace("\\\\","",$local))) {
+                    // character not valid in local part unless
+                    // local part is quoted
+                    if (!preg_match('/^"(\\\\"|[^"])+"$/', str_replace("\\\\","",$local))) {
+                        $isValid = false;
+                    }
+                }
+                // check DNS
+                if ($isValid && !(checkdnsrr($domain,"MX") || checkdnsrr($domain,"A"))) {
+                    $isValid = false;
+                }
+            }
+            return $isValid;
         }, $message);
         return $this;
     }
@@ -201,6 +240,20 @@ class Validator {
         $this->setRule(__FUNCTION__, function($val, $args) {
             return !(strlen(trim($val)) > $args[0]);
         }, $message, array($len));
+        return $this;
+    }
+
+    /**
+     * Field has to be between minlength and maxlength characters long.
+     *
+     * @param   int $minlength
+     * @param   int $maxlength
+     * @
+     */
+    public function betweenlength($minlength, $maxlength, $message = null) {
+        $message = empty($message) ? self::getDefaultMessage(__FUNCTION__, array($minlength, $maxlength)) : NULL;
+
+        $this->minlength($minlength, $message)->max($maxlength, $message);
         return $this;
     }
 
@@ -500,9 +553,17 @@ class Validator {
             if (!empty($func)) {
                 // needs a unique name to avoild collisions in the rules array
                 $name = 'callback_' . sha1(uniqid());
-                $this->_setRule($name, function($value) use ($func, $params, $callback) {
+                $this->setRule($name, function($value) use ($func, $params, $callback) {
+					if (is_array($callback)) {
+						return $func->invoke($callback[0], $value, (array) $params);
+					} else {
+						return $func->invoke($callback, $value);
+					}
+
+					/*
                     return is_array($callback) ?
-                            $func->invokeArgs($callback[0], (array) $params) : $func->invokeArgs($callback);
+                        $func->invokeArgs($callback[0], (array) $params) : $func->invokeArgs($callback);
+					*/
                 });
             }
 
