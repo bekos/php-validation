@@ -541,30 +541,28 @@ class Validator {
      * @return  FormValidator
      */
     public function callback($callback, $message = '', $params = NULL) {
-
         if (is_callable($callback)) {
-
-            if (is_array($callback)) {
-                $func = new ReflectionMethod($callback[0], $callback[1]);
-            } else if (is_string($callback)) {
-                $func = new ReflectionFunction($callback);
-            }
+        	
+        	// If an array is callable, it is a method
+        	if (is_array($callback)) {
+        		$func = new ReflectionMethod($callback[0], $callback[1]);
+        	} else {
+        		$func = new ReflectionFunction($callback);
+        	}
 
             if (!empty($func)) {
                 // needs a unique name to avoild collisions in the rules array
                 $name = 'callback_' . sha1(uniqid());
                 $this->setRule($name, function($value) use ($func, $params, $callback) {
+                	// Creates merged arguments array with validation target as first argument
+                	$args = array_merge(array($value), (is_array($params) ? $params : array($params)));
 					if (is_array($callback)) {
-						return $func->invoke($callback[0], $value, (array) $params);
+						// If callback is a method, the object must be the first argument
+						return $func->invokeArgs($callback[0], $args);
 					} else {
-						return $func->invoke($callback, $value);
+						return $func->invokeArgs($args);
 					}
-
-					/*
-                    return is_array($callback) ?
-                        $func->invokeArgs($callback[0], (array) $params) : $func->invokeArgs($callback);
-					*/
-                });
+                }, $message, $params);
             }
 
         } else {
