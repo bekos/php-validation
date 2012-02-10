@@ -556,12 +556,12 @@ class Validator {
                 $this->setRule($name, function($value) use ($func, $params, $callback) {
                     // Creates merged arguments array with validation target as first argument
                     $args = array_merge(array($value), (is_array($params) ? $params : array($params)));
-		    if (is_array($callback)) {
-		        // If callback is a method, the object must be the first argument
-			return $func->invokeArgs($callback[0], $args);
-		    } else {
-		        return $func->invokeArgs($args);
-		    }
+                    if (is_array($callback)) {
+                        // If callback is a method, the object must be the first argument
+                        return $func->invokeArgs($callback[0], $args);
+                    } else {
+                        return $func->invokeArgs($args);
+                    }
                 }, $message, $params);
             }
 

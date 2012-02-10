@@ -22,6 +22,7 @@ $validator
     // bogus formatting of the field 
     $val = rtrim($val, '/');
     $val .= '_custom_formatted';
+    return $val;
   })
   ->validate('field_to_be_formatted');
 </code>
@@ -82,6 +83,6 @@ $validator
 
 ## Credits
 
-* Modifications by Corey Ballou and Chris Gutierrez.
+* Modifications by Corey Ballou, Chris Gutierrez, and Robert Fruchtman.
 * Forked from Tasos Bekos <tbekos at gmail dot com> which was based on the initial work of "Bretticus". 
 * See http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/ for the original.
