@@ -1,5 +1,5 @@
 <?php
-class Validator_Exception exends Exception
+class Validator_Exception extends Exception
 {
     protected $_errors = array();
     
