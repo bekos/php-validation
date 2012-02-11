@@ -2,7 +2,7 @@
 
 This class follows Zend Framework naming conventions for easy drop-in as a substitute to Zend_Validation. If you opt out of using the bulky Zend_Form on your projects, you might choose to use this for quick and painless form validation.
 
-# A Quick Example
+## A Quick Example
 
 The example below shows how to throw validation exceptions with the custom
 exception. You can then retrieve the error messages from the calling method.
@@ -73,7 +73,7 @@ be handled in your Model. This is just a quick example.
         
     }
 
-# Available Validation Methods
+## Available Validation Methods
 
 * <strong>required(<em>$message = null</em>)</strong> - The field value is required.
 * <strong>email(<em>$message = null</em>)</strong> - The field value must be a valid email address string.
@@ -99,9 +99,25 @@ be handled in your Model. This is just a quick example.
 * <strong>maxDate(<em>$date, $format, $message = null</em>)</strong> - The date must be less than $date. $format must be of a format on the page http://php.net/manual/en/datetime.createfromformat.php
 * <strong>ccnum(<em>$message = null</em>)</strong> - The field value must be a valid credit card number.
 * <strong>oneOf(<em>$allowed, $message = null</em>)</strong> - The field value must be one of the $allowed values. $allowed can be either an array or a comma-separated list of values. If comma separated, do not include spaces unless intended for matching.
-* <strong>callback(<em>$callback, $message = '', $params = null</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
+* <strong>callback(<em>$callback, $message = '', $params = array()</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
 
-# Validating Arrays and Array Indices
+### Callback Examples
+
+Callback functions can be passed as strings or closures.
+
+    // numeric example
+    $validadator
+      ->callback('is_numeric', 'Field is not numeric.')
+      ->validate('number_field');
+
+    // closure example
+    $validator
+      ->callback(function($val) {
+        return $val < -1 || $val > 1;
+      }, 'Number must be less than -1 or greater than 1.')
+      ->validate('number_field_2');
+
+## Validating Arrays and Array Indices
 
 This validation class has been extended to allow for validation of arrays as well as nested indices of a multi-dimensional array.
 

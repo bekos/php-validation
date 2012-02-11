@@ -55,6 +55,24 @@ $validator
 * <strong>oneOf(<em>$allowed, $message = null</em>)</strong> - The field value must be one of the $allowed values. $allowed can be either an array or a comma-separated list of values. If comma separated, do not include spaces unless intended for matching.
 * <strong>callback(<em>$callback, $message = '', $params = null</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
 
+### Callback Examples
+
+Callback functions can be passed as strings or closures.
+
+<code>
+// numeric example
+$validadator
+  ->callback('is_numeric', 'Field is not numeric.')
+  ->validate('number_field');
+
+// closure example
+$validator
+  ->callback(function($val) {
+    return $val < -1 || $val > 1;
+  }, 'Number must be less than -1 or greater than 1.')
+  ->validate('number_field_2');
+</code>
+
 ## Validating Arrays and Array Indices
 
 This validation class has been extended to allow for validation of arrays as well as nested indices of a multi-dimensional array.

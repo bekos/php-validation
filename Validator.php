@@ -540,7 +540,7 @@ class Validator {
      * @param   mixed   $params
      * @return  FormValidator
      */
-    public function callback($callback, $message = '', $params = NULL) {
+    public function callback($callback, $message = '', $params = array()) {
         if (is_callable($callback)) {
         	
             // If an array is callable, it is a method
