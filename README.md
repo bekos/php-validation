@@ -1,6 +1,8 @@
 # A PHP 5.3 Class for Easy Form Validation
 
-This class follows Zend Framework naming conventions for easy drop-in as a substitute to Zend_Validation. If you opt out of using the bulky Zend_Form on your projects, you might choose to use this for quick and painless form validation.
+This class follows Zend Framework naming conventions for easy drop-in as a substitute to Zend_Validation. 
+If you opt out of using the bulky Zend_Form on your projects, you might choose to use this for quick and painless 
+form validation.
 
 # A Quick Example
 
@@ -9,6 +11,7 @@ exception. You can then retrieve the error messages from the calling method.
 It is not good practice to validate your data in your controller, this should
 be handled in your Model. This is just a quick example.
 
+    <?php
     class ExampleController extends Zend_Controller_Action {
     
         /**
@@ -109,6 +112,7 @@ This validation class has been extended to allow for validation of arrays as wel
 
 To validate specific indices of an array, use dot notation, i.e. 
 
+    <?php
     // load the validator
     $validator = new Validator($_POST);
     
@@ -134,6 +138,7 @@ be custom defined so long as they pass an <code>is_callable()</code> check.
 
 ### Filter Examples
 
+    <?php
     // standard php filter for valid user ids.
     $validator
       ->filter('intval')
