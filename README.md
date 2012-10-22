@@ -11,70 +11,72 @@ exception. You can then retrieve the error messages from the calling method.
 It is not good practice to validate your data in your controller, this should
 be handled in your Model. This is just a quick example.
 
-    <?php
-    class ExampleController extends Zend_Controller_Action {
-    
-        /**
-         * Your controller action that handles validation errors, as you would
-         * want these errors passed on to the view.
-         *
-         * @access  public
-         * @return  void
-         */
-        public function indexAction()
-        {
-            try {
-            
-                // validate the data
-                $validData = $this->_validate($_POST);
-                
-                // validation passed because no exception was thrown
-                // ... to something with the $validData ...
-                
-            } catch (Validator_Exception $e) {
-                // retrieve the overall error message to display
-                $message = $e->getMessage();
-                
-                // retrieve all of the errors
-                $errors = $e->getErrors();
-                
-                // the below code is specific to ZF
-                $this->_helper->FlashMessenger(array('error' => $message));
-                $this->_helper->layout->getView()->errors = $errors;
-            }
-        }
-    
-        /**
-         * Your user-defined validation handling. The exception section is
-         * very important and should always be used.
-         *
-         * @access  private
-         * @param   array   $post
-         * @return  mixed
-         */
-        private function _validate(array $post = array())
-        {
-            $validator = new Validator($post);
-            $validator
-                ->required('You must supply a name.')
-                ->validate('name', 'Name');
-            $validator
-                ->required('You must supply an email address.')
-                ->email('You must supply a valid email address')
-                ->validate('email', 'Email');
-            
-            // check for errors
-            if ($validator->hasErrors()) {
-                throw new Validator_Exception(
-                    'There were errors in your form.',
-                    $validator->getAllErrors()
-                );
-            }
+```php
+<?php
+class ExampleController extends Zend_Controller_Action {
+
+    /**
+     * Your controller action that handles validation errors, as you would
+     * want these errors passed on to the view.
+     *
+     * @access  public
+     * @return  void
+     */
+    public function indexAction()
+    {
+        try {
         
-            return $validator->getValidData();
+            // validate the data
+            $validData = $this->_validate($_POST);
+            
+            // validation passed because no exception was thrown
+            // ... to something with the $validData ...
+            
+        } catch (Validator_Exception $e) {
+            // retrieve the overall error message to display
+            $message = $e->getMessage();
+            
+            // retrieve all of the errors
+            $errors = $e->getErrors();
+            
+            // the below code is specific to ZF
+            $this->_helper->FlashMessenger(array('error' => $message));
+            $this->_helper->layout->getView()->errors = $errors;
         }
-        
     }
+
+    /**
+     * Your user-defined validation handling. The exception section is
+     * very important and should always be used.
+     *
+     * @access  private
+     * @param   array   $post
+     * @return  mixed
+     */
+    private function _validate(array $post = array())
+    {
+        $validator = new Validator($post);
+        $validator
+            ->required('You must supply a name.')
+            ->validate('name', 'Name');
+        $validator
+            ->required('You must supply an email address.')
+            ->email('You must supply a valid email address')
+            ->validate('email', 'Email');
+        
+        // check for errors
+        if ($validator->hasErrors()) {
+            throw new Validator_Exception(
+                'There were errors in your form.',
+                $validator->getAllErrors()
+            );
+        }
+    
+        return $validator->getValidData();
+    }
+    
+}
+```
 
 # Available Validation Methods
 
@@ -112,23 +114,25 @@ This validation class has been extended to allow for validation of arrays as wel
 
 To validate specific indices of an array, use dot notation, i.e. 
 
-    <?php
-    // load the validator
-    $validator = new Validator($_POST);
-    
-    // ensure $_POST['field']['nested'] exists
-    $validator
-      ->required('The nested field is required.')
-      ->validate('field.nested');
-    
-    // ensure we have the first two numeric indices of $_POST['links'][]
-    $validator
-      ->required('This field is required')
-      ->validate('links.0');
-    $validator
-      ->required('This field is required')
-      ->validate('links.1');
-    
+```php
+<?php
+// load the validator
+$validator = new Validator($_POST);
+
+// ensure $_POST['field']['nested'] exists
+$validator
+  ->required('The nested field is required.')
+  ->validate('field.nested');
+
+// ensure we have the first two numeric indices of $_POST['links'][]
+$validator
+  ->required('This field is required')
+  ->validate('links.0');
+$validator
+  ->required('This field is required')
+  ->validate('links.1');
+```
+
 # Available Pre-Validation Filtering
 
 You can apply pre-validation filters to your data (<em>i.e. trim, strip_tags, htmlentities</em>). These filters can also
@@ -138,24 +142,27 @@ be custom defined so long as they pass an <code>is_callable()</code> check.
 
 ### Filter Examples
 
-    <?php
-    // standard php filter for valid user ids.
-    $validator
-      ->filter('intval')
-      ->min(1)
-      ->validate('user_id');
-    
-    // custom filter 
-    $validator
-      ->filter(function($val) {
-        // bogus formatting of the field 
-        $val = rtrim($val, '/');
-        $val .= '_custom_formatted';
-      })
-      ->validate('field_to_be_formatted');
+```php
+<?php
+// standard php filter for valid user ids.
+$validator
+  ->filter('intval')
+  ->min(1)
+  ->validate('user_id');
+
+// custom filter 
+$validator
+  ->filter(function($val) {
+    // bogus formatting of the field 
+    $val = rtrim($val, '/');
+    $val .= '_custom_formatted';
+  })
+  ->validate('field_to_be_formatted');
+```
 
 # Credits
 
-* Modifications by Corey Ballou and Chris Gutierrez.
+
+* Modifications by Corey Ballou <https://github.com/cballou> and Chris Gutierrez <https://github.com/cgutierrez>
 * Forked from Tasos Bekos <tbekos at gmail dot com> which was based on the initial work of "Bretticus". 
 * See http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/ for the original.
