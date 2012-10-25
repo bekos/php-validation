@@ -19,7 +19,7 @@ class Validator {
     protected $arguments = array();
     protected $filters = array();
     protected $data = null;
-	protected $validData = array();
+    protected $validData = array();
 
     /**
      * Constructor.
@@ -540,13 +540,13 @@ class Validator {
      * @param   mixed   $params
      * @return  FormValidator
      */
-    public function callback($callback, $message = '', $params = NULL) {
-
+    public function callback($callback, $message = '', $params = array()) {
         if (is_callable($callback)) {
-
+        	
+            // If an array is callable, it is a method
             if (is_array($callback)) {
                 $func = new ReflectionMethod($callback[0], $callback[1]);
-            } else if (is_string($callback)) {
+            } else {
                 $func = new ReflectionFunction($callback);
             }
 
@@ -554,17 +554,15 @@ class Validator {
                 // needs a unique name to avoild collisions in the rules array
                 $name = 'callback_' . sha1(uniqid());
                 $this->setRule($name, function($value) use ($func, $params, $callback) {
-					if (is_array($callback)) {
-						return $func->invoke($callback[0], $value, (array) $params);
-					} else {
-						return $func->invoke($callback, $value);
-					}
-
-					/*
-                    return is_array($callback) ?
-                        $func->invokeArgs($callback[0], (array) $params) : $func->invokeArgs($callback);
-					*/
-                });
+                    // Creates merged arguments array with validation target as first argument
+                    $args = array_merge(array($value), (is_array($params) ? $params : array($params)));
+                    if (is_array($callback)) {
+                        // If callback is a method, the object must be the first argument
+                        return $func->invokeArgs($callback[0], $args);
+                    } else {
+                        return $func->invokeArgs($args);
+                    }
+                }, $message, $params);
             }
 
         } else {

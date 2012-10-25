@@ -1,10 +1,10 @@
 # A PHP 5.3 Class for Easy Form Validation
 
-This class follows Zend Framework naming conventions for easy drop-in as a substitute to Zend_Validation. 
-If you opt out of using the bulky Zend_Form on your projects, you might choose to use this for quick and painless 
+This class follows Zend Framework naming conventions for easy drop-in as a substitute to Zend_Validation.
+If you opt out of using the bulky Zend_Form on your projects, you might choose to use this for quick and painless
 form validation.
 
-# A Quick Example
+## A Quick Example
 
 The example below shows how to throw validation exceptions with the custom
 exception. You can then retrieve the error messages from the calling method.
@@ -25,20 +25,20 @@ class ExampleController extends Zend_Controller_Action {
     public function indexAction()
     {
         try {
-        
+
             // validate the data
             $validData = $this->_validate($_POST);
-            
+
             // validation passed because no exception was thrown
             // ... to something with the $validData ...
-            
+
         } catch (Validator_Exception $e) {
             // retrieve the overall error message to display
             $message = $e->getMessage();
-            
+
             // retrieve all of the errors
             $errors = $e->getErrors();
-            
+
             // the below code is specific to ZF
             $this->_helper->FlashMessenger(array('error' => $message));
             $this->_helper->layout->getView()->errors = $errors;
@@ -63,7 +63,7 @@ class ExampleController extends Zend_Controller_Action {
             ->required('You must supply an email address.')
             ->email('You must supply a valid email address')
             ->validate('email', 'Email');
-        
+
         // check for errors
         if ($validator->hasErrors()) {
             throw new Validator_Exception(
@@ -71,14 +71,14 @@ class ExampleController extends Zend_Controller_Action {
                 $validator->getAllErrors()
             );
         }
-    
+
         return $validator->getValidData();
     }
-    
+
 }
 ```
 
-# Available Validation Methods
+## Available Validation Methods
 
 * <strong>required(<em>$message = null</em>)</strong> - The field value is required.
 * <strong>email(<em>$message = null</em>)</strong> - The field value must be a valid email address string.
@@ -104,15 +104,31 @@ class ExampleController extends Zend_Controller_Action {
 * <strong>maxDate(<em>$date, $format, $message = null</em>)</strong> - The date must be less than $date. $format must be of a format on the page http://php.net/manual/en/datetime.createfromformat.php
 * <strong>ccnum(<em>$message = null</em>)</strong> - The field value must be a valid credit card number.
 * <strong>oneOf(<em>$allowed, $message = null</em>)</strong> - The field value must be one of the $allowed values. $allowed can be either an array or a comma-separated list of values. If comma separated, do not include spaces unless intended for matching.
-* <strong>callback(<em>$callback, $message = '', $params = null</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
+* <strong>callback(<em>$callback, $message = '', $params = array()</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
 
-# Validating Arrays and Array Indices
+### Callback Examples
+
+Callback functions can be passed as strings or closures.
+
+    // numeric example
+    $validadator
+      ->callback('is_numeric', 'Field is not numeric.')
+      ->validate('number_field');
+
+    // closure example
+    $validator
+      ->callback(function($val) {
+        return $val < -1 || $val > 1;
+      }, 'Number must be less than -1 or greater than 1.')
+      ->validate('number_field_2');
+
+## Validating Arrays and Array Indices
 
 This validation class has been extended to allow for validation of arrays as well as nested indices of a multi-dimensional array.
 
 ### Validating Specific Indices
 
-To validate specific indices of an array, use dot notation, i.e. 
+To validate specific indices of an array, use dot notation, i.e.
 
 ```php
 <?php
@@ -138,33 +154,32 @@ $validator
 You can apply pre-validation filters to your data (<em>i.e. trim, strip_tags, htmlentities</em>). These filters can also
 be custom defined so long as they pass an <code>is_callable()</code> check.
 
-* <strong>filter(<em>$callback</em>)</strong> 
+* <strong>filter(<em>$callback</em>)</strong>
 
 ### Filter Examples
 
 ```php
-<?php
-// standard php filter for valid user ids.
-$validator
-  ->filter('intval')
-  ->min(1)
-  ->validate('user_id');
+    // standard php filter for valid user ids.
+    $validator
+      ->filter('intval')
+      ->min(1)
+      ->validate('user_id');
 
-// custom filter 
-$validator
-  ->filter(function($val) {
-    // bogus formatting of the field 
-    $val = rtrim($val, '/');
-    $val .= '_custom_formatted';
-  })
-  ->validate('field_to_be_formatted');
+    // custom filter
+    $validator
+      ->filter(function($val) {
+        // bogus formatting of the field
+        $val = rtrim($val, '/');
+        $val .= '_custom_formatted';
+        return $val;
+      })
+      ->validate('field_to_be_formatted');
 ```
 
 # Credits
 
-
-* Modifications by Corey Ballou <https://github.com/cballou> and Chris Gutierrez <https://github.com/cgutierrez>
-* Forked from Tasos Bekos <tbekos at gmail dot com> which was based on the initial work of "Bretticus". 
+* Modifications by Corey Ballou, Chris Gutierrez, and Robert Fruchtman.
+* Forked from Tasos Bekos <tbekos at gmail dot com> which was based on the initial work of "Bretticus".
 * See http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/ for the original.
 
 # License

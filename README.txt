@@ -22,6 +22,7 @@ $validator
     // bogus formatting of the field 
     $val = rtrim($val, '/');
     $val .= '_custom_formatted';
+    return $val;
   })
   ->validate('field_to_be_formatted');
 </code>
@@ -54,6 +55,24 @@ $validator
 * <strong>oneOf(<em>$allowed, $message = null</em>)</strong> - The field value must be one of the $allowed values. $allowed can be either an array or a comma-separated list of values. If comma separated, do not include spaces unless intended for matching.
 * <strong>callback(<em>$callback, $message = '', $params = null</em>)</strong> - Define your own custom callback validation function. $callback must pass an is_callable() check. $params can be any value, or an array if multiple parameters must be passed.
 
+### Callback Examples
+
+Callback functions can be passed as strings or closures.
+
+<code>
+// numeric example
+$validadator
+  ->callback('is_numeric', 'Field is not numeric.')
+  ->validate('number_field');
+
+// closure example
+$validator
+  ->callback(function($val) {
+    return $val < -1 || $val > 1;
+  }, 'Number must be less than -1 or greater than 1.')
+  ->validate('number_field_2');
+</code>
+
 ## Validating Arrays and Array Indices
 
 This validation class has been extended to allow for validation of arrays as well as nested indices of a multi-dimensional array.
@@ -82,6 +101,6 @@ $validator
 
 ## Credits
 
-* Modifications by Corey Ballou and Chris Gutierrez.
+* Modifications by Corey Ballou, Chris Gutierrez, and Robert Fruchtman.
 * Forked from Tasos Bekos <tbekos at gmail dot com> which was based on the initial work of "Bretticus". 
 * See http://brettic.us/2010/06/18/form-validation-class-using-php-5-3/ for the original.
