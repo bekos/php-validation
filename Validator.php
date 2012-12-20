@@ -293,7 +293,7 @@ class Validator extends BaseValidator {
             $message = $this->getErrorMessage(__FUNCTION__);
         }
 
-        $this->min(0, FALSE, $message);
+        $this->max(0, FALSE, $message);
         return $this;
     }
 
